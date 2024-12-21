@@ -1,0 +1,48 @@
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+
+# Secret settings
+.env
+*.env
+
+# Database files
+*.sqlite3
+
+# Static and media files (only if served locally during development)
+staticfiles/
+media/
+
+# Django specific cache files
+*.log
+*.pot
+*.pyc
+
+# Celery beat schedule file
+celerybeat-schedule
+
+# Virtual environment
+venv/
+env/
+*.egg-info/
+
+# Testing files
+coverage/
+*.cover
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.iml
+
+# Deployment files
+*.bak
+*.swp
