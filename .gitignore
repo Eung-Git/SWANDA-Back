@@ -46,3 +46,7 @@ Thumbs.db
 # Deployment files
 *.bak
 *.swp
+
+secret.json
+*/migrations/
+!*/migrations/__init__.py
