@@ -47,6 +47,6 @@ Thumbs.db
 *.bak
 *.swp
 
-secret.json
+*/secret.json
 */*/migrations/
 !*/migrations/__init__.py
