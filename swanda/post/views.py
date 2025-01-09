@@ -45,3 +45,31 @@ class AdoptView(APIView):
             
         except Question.DoesNotExist:
             return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
+
+class AnswerView(APIView):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            content = data.get('content')
+            question_id = data.get('question')
+
+            if not content:
+                return Response({'error': 'Content is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            question = Question.objects.get(id=question_id)
+
+            new_answer = Answer.objects.create(
+                question=question,
+                content=content
+            )
+
+            return Response({
+                'message': 'Answer created successfully',
+                'question': question.title,
+                'content': new_answer.content,
+                # 'likes': new_answer.likes,
+                'is_adopted': new_answer.is_adopted
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

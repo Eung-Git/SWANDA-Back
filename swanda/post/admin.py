@@ -3,3 +3,4 @@ from .models import *
 
 admin.site.register(Post)
 admin.site.register(Question)
+admin.site.register(Answer)
