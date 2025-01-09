@@ -17,3 +17,15 @@ class Question(models.Model):
     
     def __str__(self):
         return f"{self.title} at {self.created_at}"
+
+
+class Answer(models.Model):
+    id = models.AutoField(primary_key=True)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
+    created_at = models.DateTimeField(auto_now_add=True)
+    content = models.TextField(max_length=1000)
+    # likes = models.ManyToManyField() // 추후 유저 추가한 뒤
+    is_adopted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Answer to {self.question.title} at {self.created_at}"
