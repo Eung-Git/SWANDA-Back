@@ -32,3 +32,17 @@ class QuestionView(APIView):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class AdoptView(APIView):
+    def apdopt(self, request, question=None, answer=None):
+        try:
+            question = Question.objects.get(id = question)
+            
+            question.adopt = 1
+            question.save()
+            
+            # 해당 댓글을 채택한 댓글로 지정
+            
+        except Question.DoesNotExist:
+            return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
+            
