@@ -1,10 +1,12 @@
 from django.urls import path
 
 from . import views
-from .views import QuestionView
+from .views import *
 
 
 urlpatterns = [
     # path("", views.index, name="index"),
-    path('create/', QuestionView.as_view(), name='create-question'),
+    path('question_create/', QuestionView.as_view(), name='create-question'),
+    path('answer_create/', AnswerView.as_view(), name='create-answer'),
+    path('answers_replies/', AnswersAnswerView.as_view(), name='create-reply'),
 ]

@@ -13,7 +13,6 @@ class QuestionView(APIView):
             title = request.data.get('title')
             content = request.data.get('content')
             file = request.FILES.get('file')
-            
             if not title or not content:
                 return Response({'error': 'Title or content are required'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -45,4 +44,68 @@ class AdoptView(APIView):
             
         except Question.DoesNotExist:
             return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
-            
+
+class AnswerView(APIView):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            content = data.get('content')
+            question_id = data.get('question')
+
+            if not content:
+                return Response({'error': 'Content is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            question = Question.objects.get(id=question_id)
+
+            new_answer = Answer.objects.create(
+                question=question,
+                content=content
+            )
+
+            return Response({
+                'message': 'Answer created successfully',
+                'question': question.title,
+                'content': new_answer.content,
+                # 'likes': new_answer.likes,
+                'is_adopted': new_answer.is_adopted
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AnswersAnswerView(APIView):
+
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            content = data.get('content')
+            answer_id = data.get('answer')
+
+            if not content:
+                return Response({'error': 'Content is required'}, status=status.HTTP_400_BAD_REQUEST)
+            if not answer_id:
+                return Response({'error': 'Answer ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                answer = Answer.objects.get(id=answer_id)
+            except Answer.DoesNotExist:
+                return Response({'error': 'Parent answer not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            new_answersanswer = AnswersAnswer.objects.create(
+                answer=answer,
+                content=content
+            )
+            return Response({
+                'message': 'Reply created successfully',
+                'reply': {
+                    'id': new_answersanswer.id,
+                    'answer_id': new_answersanswer.answer.id,
+                    'content': new_answersanswer.content,
+                    #'likes': new_answersanswer.likes,
+                    'created_at': new_answersanswer.created_at,
+                }
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
