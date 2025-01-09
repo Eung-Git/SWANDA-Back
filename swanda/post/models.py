@@ -29,3 +29,13 @@ class Answer(models.Model):
 
     def __str__(self):
         return f"Answer to {self.question.title} at {self.created_at}"
+
+class AnswersAnswer(models.Model):
+    id = models.AutoField(primary_key=True)
+    answer = models.ForeignKey(Answer, on_delete=models.CASCADE, related_name='replies')
+    created_at = models.DateTimeField(auto_now_add=True)
+    content = models.TextField(max_length=800)
+    # likes = models.ManyToManyField() // 추후 유저 추가한 뒤
+
+    def __str__(self):
+        return f"Reply to {self.answer.id} at {self.created_at}"
