@@ -13,7 +13,6 @@ class QuestionView(APIView):
             title = request.data.get('title')
             content = request.data.get('content')
             file = request.FILES.get('file')
-            print(title, content)
             if not title or not content:
                 return Response({'error': 'Title or content are required'}, status=status.HTTP_400_BAD_REQUEST)
 
