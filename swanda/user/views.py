@@ -8,8 +8,6 @@ class SignupView(APIView):
     def post(self, request):
         print(request.data)
         serializer = SignupSerializer(data=request.data)
-        if not serializer.is_valid():
-            print(serializer.errors)
         if serializer.is_valid():
             user = serializer.save()
             return Response({"message": "User created successfully!"}, status=status.HTTP_201_CREATED)
