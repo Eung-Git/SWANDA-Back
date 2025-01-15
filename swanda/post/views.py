@@ -4,6 +4,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import *
+from .serializers import *
+
 
 
 # Create your views here.
@@ -74,7 +76,7 @@ class AnswerView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class AnswersAnswerView(APIView):
+class ReplyView(APIView):
 
     def post(self, request):
         try:
@@ -92,7 +94,7 @@ class AnswersAnswerView(APIView):
             except Answer.DoesNotExist:
                 return Response({'error': 'Parent answer not found'}, status=status.HTTP_404_NOT_FOUND)
 
-            new_answersanswer = AnswersAnswer.objects.create(
+            new_answersanswer = Reply.objects.create(
                 answer=answer,
                 content=content
             )
@@ -109,3 +111,64 @@ class AnswersAnswerView(APIView):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class QuestionViewSet(APIView):
+    def get(self, request):
+        questions = Question.objects.all()
+        serializer = QuestionSerializer(questions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class QuestionDetailView(APIView):
+    def get(self, request, question_id):
+        try:
+            question = Question.objects.get(id=question_id)
+            serializer = QuestionSerializer(question)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Question.DoesNotExist:
+            return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
+
+class AnswerViewSet(APIView):
+    def get(self, request, question_id):
+        try:
+            question = Question.objects.get(id=question_id)
+            answers = question.answers.all()  # related_name='answers'
+            serializer = AnswerSerializer(answers, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Question.DoesNotExist:
+            return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
+
+class AnswerDetailView(APIView):
+    def get(self, request, question_id, sequence_id):
+        try:
+            answer = Answer.objects.get( question_id=question_id, sequence_id= sequence_id)
+            serializer = AnswerSerializer(answer)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Answer.DoesNotExist:
+            return Response({'error': 'Answer not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ReplyViewSet(APIView):
+    def get(self, request, question_id, sequence_id,):
+        try:
+            answer = Answer.objects.get(question_id=question_id, sequence_id=sequence_id)
+            replies = answer.replies.all()  # related_name='replies'
+            serializer = ReplySerializer(replies, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Answer.DoesNotExist:
+            return Response({'error': 'Answer not found'}, status=status.HTTP_404_NOT_FOUND)
+
+class ReplyDetailView(APIView):
+    def get(self, request, question_id, answer_sequence_id, reply_sequence_id):
+        try:
+            # `question_id`와 `answer_sequence_id`를 통해 Reply를 가져옴
+            reply = Reply.objects.get(
+                answer__question__id=question_id,  # `Question`의 `id` 참조
+                answer__sequence_id=answer_sequence_id,  # `Answer`의 `sequence_id` 참조
+                reply_sequence_id=reply_sequence_id  # `Reply`의 `reply_sequence_id` 참조
+            )
+            serializer = ReplySerializer(reply)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Reply.DoesNotExist:
+            return Response({'error': 'Reply not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
