@@ -15,6 +15,21 @@ class SignupView(APIView):
             return Response({"message": "User created successfully!"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+class CheckNicknameView(APIView):
+    def post(self, request):
+        nickname = request.data.get('nickname')
+        if User.objects.filter(nickname=nickname).exists():
+            return Response({"detail": "이미 존재하는 nickname입니다."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "사용 가능한 nickname입니다."}, status=status.HTTP_400_BAD_REQUEST)
+    
+class CheckEmailView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        if User.objects.filter(email=email).exists():
+            return Response({"detail": "이미 존재하는 email입니다."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "사용 가능한 email입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            
+    
 class SigninView(APIView):
     def post(self, request):
         email = request.data.get('email')
