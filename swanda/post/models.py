@@ -12,12 +12,18 @@ class Question(models.Model):
     title = models.CharField(max_length=100)
     content = models.TextField(max_length=1000)
     # likes = models.ManyToManyField() // 추후 유저 추가한 뒤
-    adopt = models.BooleanField(default=False)
+    has_accepted_answer = models.BooleanField(default=False)
+    answer_ids = models.JSONField(default=[])
     scrap = models.IntegerField(default=0)
     file = models.FileField(upload_to='Questionfile/', null=True, blank=True)
-    
-    def __str__(self):
-        return f"{self.title} at {self.created_at}"
+
+    def update_answer_info(self):
+        """답변 정보를 갱신하는 메서드"""
+        self.answer_ids = list(self.answers.values_list('id', flat=True))
+        self.has_accepted_answer = self.answers.filter(is_adopted=True).exists()
+        self.save()
+
+
 
 
 class Answer(models.Model):
@@ -29,7 +35,12 @@ class Answer(models.Model):
     content = models.TextField(max_length=1000)
     # likes = models.ManyToManyField() // 추후 유저 추가한 뒤
     is_adopted = models.BooleanField(default=False)
+    reply_ids = models.JSONField(default=list, blank=True)
 
+    def update_reply_info(self):
+        """대댓글 정보를 업데이트하는 메서드"""
+        self.reply_ids = list(self.replies.values_list('id', flat=True))
+        self.save()
     class Meta:
         unique_together = ('question_id', 'sequence_id')  # 질문 내에서 고유 ID 보장
 
@@ -50,7 +61,12 @@ class Reply(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     content = models.TextField(max_length=800)
+    question_id = models.PositiveIntegerField()
 
+    def save(self, *args, **kwargs):
+        """저장 시 관련 질문 ID를 자동 업데이트"""
+        self.question_id = self.answer.question.id
+        super().save(*args, **kwargs)
     class Meta:
         unique_together = ('answer', 'reply_sequence_id')  # 답변 내에서 고유 ID 보장
 
