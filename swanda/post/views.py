@@ -127,6 +127,17 @@ class QuestionDetailView(APIView):
         except Question.DoesNotExist:
             return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
 
+    def put(self, request, question_id):
+        try:
+            question = Question.objects.get(id=question_id)
+            serializer = QuestionSerializer(question, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()  # updated_at 필드가 자동으로 갱신됨
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Question.DoesNotExist:
+            return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
+
 class AnswerViewSet(APIView):
     def get(self, request, question_id):
         try:
@@ -146,6 +157,16 @@ class AnswerDetailView(APIView):
         except Answer.DoesNotExist:
             return Response({'error': 'Answer not found'}, status=status.HTTP_404_NOT_FOUND)
 
+    def put(self, request, question_id, sequence_id):
+        try:
+            answer = Answer.objects.get(question__id=question_id, sequence_id=sequence_id)
+            serializer = AnswerSerializer(answer, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()  # updated_at 필드 자동 갱신
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Answer.DoesNotExist:
+            return Response({'error': 'Answer not found'}, status=status.HTTP_404_NOT_FOUND)
 
 class ReplyViewSet(APIView):
     def get(self, request, question_id, sequence_id,):
@@ -171,4 +192,19 @@ class ReplyDetailView(APIView):
         except Reply.DoesNotExist:
             return Response({'error': 'Reply not found'}, status=status.HTTP_404_NOT_FOUND)
 
+    def put(self, request, question_id, answer_sequence_id, reply_sequence_id):
+        try:
+            reply = Reply.objects.get(
+                answer__question__id=question_id,
+                answer__sequence_id=answer_sequence_id,
+                reply_sequence_id=reply_sequence_id
+            )
+
+            serializer = ReplySerializer(reply, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()  # updated_at 필드 자동 갱신
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Reply.DoesNotExist:
+            return Response({'error': 'Reply not found'}, status=status.HTTP_404_NOT_FOUND)
 

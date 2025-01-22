@@ -8,6 +8,7 @@ class Post(models.Model):
 class Question(models.Model):
     id = models.AutoField(primary_key=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     title = models.CharField(max_length=100)
     content = models.TextField(max_length=1000)
     # likes = models.ManyToManyField() // 추후 유저 추가한 뒤
@@ -24,6 +25,7 @@ class Answer(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
     sequence_id = models.PositiveIntegerField(editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     content = models.TextField(max_length=1000)
     # likes = models.ManyToManyField() // 추후 유저 추가한 뒤
     is_adopted = models.BooleanField(default=False)
@@ -46,6 +48,7 @@ class Reply(models.Model):
     answer = models.ForeignKey(Answer, on_delete=models.CASCADE, related_name='replies')
     reply_sequence_id = models.PositiveIntegerField(editable=False)  # 답변별 고유 ID
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     content = models.TextField(max_length=800)
 
     class Meta:
