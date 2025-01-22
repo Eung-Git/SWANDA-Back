@@ -15,11 +15,6 @@ class SignupView(APIView):
             return Response({"message": "User created successfully!"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class UserViewSet(viewsets.ModelViewSet):
-
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    
 class SigninView(APIView):
     def post(self, request):
         email = request.data.get('email')
