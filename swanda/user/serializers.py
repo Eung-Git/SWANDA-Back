@@ -28,6 +28,7 @@ class SignupSerializer(serializers.ModelSerializer):
             phone_number=validated_data['phone_number'],
         )
         return user
+    
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

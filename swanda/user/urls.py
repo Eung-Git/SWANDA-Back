@@ -8,8 +8,6 @@ router.register('user', UserViewSet, basename='user')
 
 urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
-    # path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    # path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    # path('protected/', ProtectedView.as_view(), name='protected'),
+    path('login/', SigninView.as_view(), name='login'),
     path('', include(router.urls)),
 ]
