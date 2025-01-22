@@ -35,7 +35,7 @@ class Answer(models.Model):
     content = models.TextField(max_length=1000)
     # likes = models.ManyToManyField() // 추후 유저 추가한 뒤
     is_adopted = models.BooleanField(default=False)
-    reply_ids = models.JSONField(default=list, blank=True)
+    reply_ids = models.JSONField(default=[])
 
     def update_reply_info(self):
         """대댓글 정보를 업데이트하는 메서드"""
@@ -61,7 +61,7 @@ class Reply(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     content = models.TextField(max_length=800)
-    question_id = models.PositiveIntegerField()
+    question_id = models.PositiveIntegerField(default=1, blank=True)
 
     def save(self, *args, **kwargs):
         """저장 시 관련 질문 ID를 자동 업데이트"""

@@ -18,6 +18,7 @@ class AnswerAdmin(admin.ModelAdmin):
 @admin.register(Reply)
 class ReplyAdmin(admin.ModelAdmin):
     list_display = ('id', 'answer', 'reply_sequence_id', 'content', 'created_at', 'updated_at')
+    exclude = ('question_id',)
     readonly_fields = ('created_at', 'updated_at')
 
 
