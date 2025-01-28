@@ -3,6 +3,7 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from .models import *
 from .serializers import *
 
@@ -10,8 +11,11 @@ from .serializers import *
 
 # Create your views here.
 class QuestionView(APIView):
+    permission_classes = [IsAuthenticated]
+    
     def post(self, request):
         try:
+            user = request.user
             title = request.data.get('title')
             content = request.data.get('content')
             file = request.FILES.get('file')
@@ -19,6 +23,7 @@ class QuestionView(APIView):
                 return Response({'error': 'Title or content are required'}, status=status.HTTP_400_BAD_REQUEST)
 
             new_question = Question.objects.create(
+                user = user,
                 title = title,
                 content = content,
                 file = file
@@ -48,8 +53,11 @@ class AdoptView(APIView):
             return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
 
 class AnswerView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         try:
+            user = request.user
             data = json.loads(request.body)
             content = data.get('content')
             question_id = data.get('question')
@@ -60,6 +68,7 @@ class AnswerView(APIView):
             question = Question.objects.get(id=question_id)
 
             new_answer = Answer.objects.create(
+                user = user,
                 question=question,
                 content=content
             )
@@ -77,9 +86,11 @@ class AnswerView(APIView):
 
 
 class ReplyView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         try:
+            user = request.user
             data = json.loads(request.body)
             content = data.get('content')
             answer_id = data.get('answer')
@@ -94,18 +105,19 @@ class ReplyView(APIView):
             except Answer.DoesNotExist:
                 return Response({'error': 'Parent answer not found'}, status=status.HTTP_404_NOT_FOUND)
 
-            new_answersanswer = Reply.objects.create(
+            reply = Reply.objects.create(
+                user = user,
                 answer=answer,
                 content=content
             )
             return Response({
                 'message': 'Reply created successfully',
                 'reply': {
-                    'id': new_answersanswer.id,
-                    'answer_id': new_answersanswer.answer.id,
-                    'content': new_answersanswer.content,
-                    #'likes': new_answersanswer.likes,
-                    'created_at': new_answersanswer.created_at,
+                    'id': reply.id,
+                    'answer_id': reply.answer.id,
+                    'content': reply.content,
+                    #'likes': reply.likes,
+                    'created_at': reply.created_at,
                 }
             }, status=status.HTTP_201_CREATED)
 
@@ -118,15 +130,26 @@ class QuestionViewSet(APIView):
         serializer = QuestionSerializer(questions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 class QuestionDetailView(APIView):
     def get(self, request, question_id):
         try:
             question = Question.objects.get(id=question_id)
-            serializer = QuestionSerializer(question)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            serializer = QuestionSerializer(question, context={'request': request})
+
+            # 기존 직렬화 데이터 가져오기
+            data = serializer.data
+
+            # 해당 질문에 대한 모든 답변의 대댓글 ID 목록 추가
+            data['reply_ids'] = list(
+                Reply.objects.filter(answer__question=question)
+                .values_list('id', flat=True)
+            )
+
+            return Response(data, status=status.HTTP_200_OK)
+
         except Question.DoesNotExist:
             return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
-
     def put(self, request, question_id):
         try:
             question = Question.objects.get(id=question_id)
