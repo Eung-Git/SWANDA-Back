@@ -13,7 +13,7 @@ class Question(models.Model):
     content = models.TextField(max_length=1000)
     # likes = models.ManyToManyField() // 추후 유저 추가한 뒤
     has_accepted_answer = models.BooleanField(default=False)
-    answer_ids = models.JSONField(default=[])
+    answer_ids = models.JSONField(default=list, blank=True, null=True)
     scrap = models.IntegerField(default=0)
     file = models.FileField(upload_to='Questionfile/', null=True, blank=True)
 
@@ -61,20 +61,25 @@ class Reply(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     content = models.TextField(max_length=800)
-    question_id = models.PositiveIntegerField()
+    question_id = models.PositiveIntegerField(blank=True, null=True, editable=False)  # 필수 입력 해제
 
-    def save(self, *args, **kwargs):
-        """저장 시 관련 질문 ID를 자동 업데이트"""
-        self.question_id = self.answer.question.id
-        super().save(*args, **kwargs)
     class Meta:
         unique_together = ('answer', 'reply_sequence_id')  # 답변 내에서 고유 ID 보장
 
     def save(self, *args, **kwargs):
-        if not self.reply_sequence_id:
+        """저장 시 관련 질문 ID 및 sequence ID 자동 설정"""
+        if self.reply_sequence_id is None:  # 기존에 값이 없을 경우
             last_reply = Reply.objects.filter(answer=self.answer).order_by('reply_sequence_id').last()
-            self.reply_sequence_id = last_reply.sequence_id + 1 if last_reply else 1
+            self.reply_sequence_id = (last_reply.reply_sequence_id + 1) if last_reply else 1
+
+        if self.question_id is None:  # question_id가 없는 경우 자동 설정
+            self.question_id = self.answer.question.id
+
         super().save(*args, **kwargs)
 
+    @property
+    def question(self):
+        return self.answer.question  # answer 관계를 통해 question 접근
+
     def __str__(self):
-        return f"Reply to answer {self.reply_sequence_id} with sequence {self.reply_sequence_id}"
+        return f"Reply to answer {self.answer.id} with sequence {self.reply_sequence_id}"
