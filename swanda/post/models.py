@@ -1,5 +1,8 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 from datetime import *
+
+User = get_user_model()
 
 # Create your models here.
 class Post(models.Model):
@@ -7,6 +10,7 @@ class Post(models.Model):
     
 class Question(models.Model):
     id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='question')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     title = models.CharField(max_length=100)
@@ -28,6 +32,7 @@ class Question(models.Model):
 
 class Answer(models.Model):
     id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='answer')
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
     sequence_id = models.PositiveIntegerField(editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -56,6 +61,7 @@ class Answer(models.Model):
 
 class Reply(models.Model):
     id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reply')
     answer = models.ForeignKey(Answer, on_delete=models.CASCADE, related_name='replies')
     reply_sequence_id = models.PositiveIntegerField(editable=False)  # 답변별 고유 ID
     created_at = models.DateTimeField(auto_now_add=True)
