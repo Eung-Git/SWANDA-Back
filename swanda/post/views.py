@@ -3,6 +3,7 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from .models import *
 from .serializers import *
 
@@ -10,8 +11,11 @@ from .serializers import *
 
 # Create your views here.
 class QuestionView(APIView):
+    permission_classes = [IsAuthenticated]
+    
     def post(self, request):
         try:
+            user = request.user
             title = request.data.get('title')
             content = request.data.get('content')
             file = request.FILES.get('file')
@@ -19,6 +23,7 @@ class QuestionView(APIView):
                 return Response({'error': 'Title or content are required'}, status=status.HTTP_400_BAD_REQUEST)
 
             new_question = Question.objects.create(
+                user = user,
                 title = title,
                 content = content,
                 file = file
@@ -48,8 +53,11 @@ class AdoptView(APIView):
             return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
 
 class AnswerView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         try:
+            user = request.user
             data = json.loads(request.body)
             content = data.get('content')
             question_id = data.get('question')
@@ -60,6 +68,7 @@ class AnswerView(APIView):
             question = Question.objects.get(id=question_id)
 
             new_answer = Answer.objects.create(
+                user = user,
                 question=question,
                 content=content
             )
@@ -77,9 +86,11 @@ class AnswerView(APIView):
 
 
 class ReplyView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         try:
+            user = request.user
             data = json.loads(request.body)
             content = data.get('content')
             answer_id = data.get('answer')
@@ -95,6 +106,7 @@ class ReplyView(APIView):
                 return Response({'error': 'Parent answer not found'}, status=status.HTTP_404_NOT_FOUND)
 
             reply = Reply.objects.create(
+                user = user,
                 answer=answer,
                 content=content
             )
