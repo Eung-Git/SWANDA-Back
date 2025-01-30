@@ -35,7 +35,7 @@ def send_verification_email(email):
     verification_code = str(random.randint(100000, 999999))
     
     subject = "SWANDA 이메일 인증 요청"
-    message = f"SWANDA 비밀번호 변경 인증 메일입니다.\n\n인증번호: {verification_code}\n\n해당 인증번호를 입력하여 인증을 완료해주세요."
+    message = f"SWANDA 회원가입 이메일 인증 메일입니다.\n\n인증번호: {verification_code}\n\n해당 인증번호를 입력하여 인증을 완료해주세요."
     from_email = settings.EMAIL_HOST_USER
     send_mail(
         subject=subject,
