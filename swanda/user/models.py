@@ -16,9 +16,16 @@ class User(AbstractUser):
     major = models.IntegerField(choices=MAJOR_CHOICES, blank=True, null=True)
     email = models.CharField(max_length=255, unique=True)
     verification_code = models.CharField(max_length=15, blank=True, null=True)
+    scraped = models.ManyToManyField('post.Question', related_name='scraped', blank=True)
     
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email', 'nickname']
+    
+    def scrap_question(self, question):
+        if question in self.scraped.all():
+            self.scraped.remove(question)
+        else:
+            self.scraped.add(question)
     
 class TemporaryUser(models.Model):
     email = models.CharField(max_length=255, unique=True)

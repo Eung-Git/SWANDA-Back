@@ -1,10 +1,11 @@
 import json
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import *
+from user.models import User
 from .serializers import *
 
 
@@ -124,6 +125,54 @@ class ReplyView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class LikeView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        user = request.user
+        question_id = request.data.get('question')
+        answer_id = request.data.get('answer')
+        
+        if question_id:
+            question = get_object_or_404(Question, id=question_id)
+            
+            if user in question.likes.all():
+                question.likes.remove(user)
+                return Response({"detail": "좋아요 삭제"}, status=status.HTTP_200_OK)
+            
+            else:
+                question.likes.add(user)
+                return Response({"detail": "좋아요 추가"}, status=status.HTTP_200_OK)
+            
+        else:
+            answer = get_object_or_404(Answer, id=answer_id)
+            
+            if user in answer.likes.all():
+                answer.likes.remove(user)
+                return Response({"detail": "좋아요 삭제"}, status=status.HTTP_200_OK)
+            
+            else:
+                answer.likes.add(user)
+                return Response({"detail": "좋아요 추가"}, status=status.HTTP_200_OK)
+           
+class ScrapView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        question_id = request.data.get('question')
+        
+        question = get_object_or_404(Question, id=question_id)
+        
+        if user in question.scrap.all():
+            question.scrap.remove(user)
+            user.scrap_question(question)
+            return Response({"detail": "스크랩 삭제"}, status=status.HTTP_200_OK)
+        else:
+            question.scrap.add(user)
+            user.scrap_question(question)
+            return Response({"detail": "스크랩 추가"}, status=status.HTTP_200_OK)
+
 class QuestionViewSet(APIView):
     def get(self, request):
         questions = Question.objects.all()
@@ -230,4 +279,5 @@ class ReplyDetailView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Reply.DoesNotExist:
             return Response({'error': 'Reply not found'}, status=status.HTTP_404_NOT_FOUND)
-
+          
+    
