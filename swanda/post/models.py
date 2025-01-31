@@ -15,10 +15,10 @@ class Question(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     title = models.CharField(max_length=100)
     content = models.TextField(max_length=1000)
-    # likes = models.ManyToManyField() // 추후 유저 추가한 뒤
+    likes = models.ManyToManyField(User, related_name='q_likes', blank=True)
     has_accepted_answer = models.BooleanField(default=False)
     answer_ids = models.JSONField(default=list, blank=True, null=True)
-    scrap = models.IntegerField(default=0)
+    scrap = models.ManyToManyField(User, related_name='scrap', blank=True)
     file = models.FileField(upload_to='Questionfile/', null=True, blank=True)
 
     def update_answer_info(self):
@@ -38,7 +38,7 @@ class Answer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     content = models.TextField(max_length=1000)
-    # likes = models.ManyToManyField() // 추후 유저 추가한 뒤
+    likes = models.ManyToManyField(User, related_name='a_likes', blank=True)
     is_adopted = models.BooleanField(default=False)
     reply_ids = models.JSONField(default=list, blank=True)
 
