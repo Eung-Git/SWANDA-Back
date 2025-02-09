@@ -1,8 +1,11 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 from datetime import *
 from django.conf import settings  # User 모델 참조
 User = settings.AUTH_USER_MODEL
 
+
+User = get_user_model()
 
 # Create your models here.
 class Post(models.Model):
@@ -10,14 +13,15 @@ class Post(models.Model):
     
 class Question(models.Model):
     id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='question')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     title = models.CharField(max_length=100)
     content = models.TextField(max_length=1000)
-    # likes = models.ManyToManyField() // 추후 유저 추가한 뒤
+    likes = models.ManyToManyField(User, related_name='q_likes', blank=True)
     has_accepted_answer = models.BooleanField(default=False)
     answer_ids = models.JSONField(default=list, blank=True, null=True)
-    scrap = models.IntegerField(default=0)
+    scrap = models.ManyToManyField(User, related_name='scrap', blank=True)
     file = models.FileField(upload_to='Questionfile/', null=True, blank=True)
 
     def update_answer_info(self):
@@ -31,6 +35,7 @@ class Question(models.Model):
 
 class Answer(models.Model):
     id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='answer')
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
     sequence_id = models.PositiveIntegerField(editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -70,6 +75,7 @@ class Answer(models.Model):
 
 class Reply(models.Model):
     id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reply')
     answer = models.ForeignKey(Answer, on_delete=models.CASCADE, related_name='replies')
     reply_sequence_id = models.PositiveIntegerField(editable=False)  # 답변별 고유 ID
     created_at = models.DateTimeField(auto_now_add=True)
