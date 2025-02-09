@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from datetime import *
 
 User = get_user_model()
@@ -8,9 +10,17 @@ User = get_user_model()
 class Post(models.Model):
     id = models.AutoField(primary_key=True)
     
+class Alarm(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='alarm')
+    type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('type', 'object_id')
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
 class Question(models.Model):
     id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='question')
+    user = models.ForeignKey(User, on_db elete=models.CASCADE, related_name='question')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     title = models.CharField(max_length=100)
@@ -20,6 +30,7 @@ class Question(models.Model):
     answer_ids = models.JSONField(default=list, blank=True, null=True)
     scrap = models.ManyToManyField(User, related_name='scrap', blank=True)
     file = models.FileField(upload_to='Questionfile/', null=True, blank=True)
+    alarm = GenericRelation(Alarm)
 
     def update_answer_info(self):
         """답변 정보를 갱신하는 메서드"""
@@ -41,6 +52,7 @@ class Answer(models.Model):
     likes = models.ManyToManyField(User, related_name='a_likes', blank=True)
     is_adopted = models.BooleanField(default=False)
     reply_ids = models.JSONField(default=list, blank=True)
+    alarm = GenericRelation(Alarm)
 
     def update_reply_info(self):
         """대댓글 정보를 업데이트하는 메서드"""
@@ -68,6 +80,7 @@ class Reply(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     content = models.TextField(max_length=800)
     question_id = models.PositiveIntegerField(blank=True, null=True, editable=False)  # 필수 입력 해제
+    alarm = GenericRelation(Alarm)
 
     class Meta:
         unique_together = ('answer', 'reply_sequence_id')  # 답변 내에서 고유 ID 보장

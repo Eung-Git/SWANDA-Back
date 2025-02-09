@@ -30,6 +30,13 @@ class QuestionView(APIView):
                 file = file
             )
             
+            if user != new_question.user:
+                Alarm.objects.create(
+                    user = user,
+                    type = ContentType.objects.get_for_model(Question),
+                    object_id = new_question.id
+                )
+            
             return Response({
                 'message': 'Data received successfully',
                 'title': new_question.title,
@@ -62,6 +69,7 @@ class AnswerView(APIView):
             data = json.loads(request.body)
             content = data.get('content')
             question_id = data.get('question')
+            print(question_id)
 
             if not content:
                 return Response({'error': 'Content is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -73,6 +81,13 @@ class AnswerView(APIView):
                 question=question,
                 content=content
             )
+            
+            if user != question.user:
+                Alarm.objects.create(
+                    user = user,
+                    type = ContentType.objects.get_for_model(Answer),
+                    object_id = new_answer.id
+                )
 
             return Response({
                 'message': 'Answer created successfully',
@@ -111,6 +126,14 @@ class ReplyView(APIView):
                 answer=answer,
                 content=content
             )
+            
+            if user != reply.user:
+                Alarm.objects.create(
+                    user = user,
+                    type = ContentType.objects.get_for_model(Reply),
+                    object_id = reply.id
+                )
+                
             return Response({
                 'message': 'Reply created successfully',
                 'reply': {
