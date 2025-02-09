@@ -350,26 +350,3 @@ class ReplyDetailView(APIView):
         except Reply.DoesNotExist:
             return Response({'error': 'Reply not found'}, status=status.HTTP_404_NOT_FOUND)
           
-class AnswerLikeView(APIView):
-    permission_classes = [IsAuthenticated]  # 로그인한 사용자만 접근 가능
-
-    def post(self, request, question_id, answer_sequence_id):
-        try:
-            # 답변 찾기
-            answer = Answer.objects.get(question__id=question_id, sequence_id=answer_sequence_id)
-
-            # 좋아요 토글
-            liked = answer.toggle_like(request.user)
-
-            return Response({
-                'message': 'Like toggled successfully',
-                'answer_id': answer.id,
-                'liked': liked,  # True면 좋아요 추가됨, False면 좋아요 취소됨
-                'like_count': answer.like_count(),
-            }, status=status.HTTP_200_OK)
-
-        except Answer.DoesNotExist:
-            return Response({'error': 'Answer not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -44,14 +44,6 @@ class Answer(models.Model):
     is_adopted = models.BooleanField(default=False)
     reply_ids = models.JSONField(default=list, blank=True)
     likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='liked_answers', blank=True)
-    def toggle_like(self, user):
-        """좋아요를 토글하는 메서드 (추가/취소)"""
-        if user in self.likes.all():
-            self.likes.remove(user)
-            return False  # 좋아요 취소됨
-        else:
-            self.likes.add(user)
-            return True  # 좋아요 추가됨
 
     def like_count(self):
         """현재 좋아요 개수 반환"""

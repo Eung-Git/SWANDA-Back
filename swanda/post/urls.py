@@ -18,6 +18,5 @@ urlpatterns = [
     path('answers/<int:question_id>/<int:sequence_id>/', AnswerDetailView.as_view(), name='answer-detail'),
     path('replies/<int:question_id>/<int:sequence_id>/', ReplyViewSet.as_view(), name='reply-list'),
     path('replies/<int:question_id>/<int:answer_sequence_id>/<int:reply_sequence_id>/', ReplyDetailView.as_view(), name='reply-detail'),
-    path('answers/<int:question_id>/<int:answer_sequence_id>/like/', AnswerLikeView.as_view(), name='like-answer'),
 
 ]
