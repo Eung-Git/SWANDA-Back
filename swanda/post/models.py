@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from datetime import *
+from django.conf import settings  # User 모델 참조
+User = settings.AUTH_USER_MODEL
+
 
 User = get_user_model()
 
@@ -38,10 +41,13 @@ class Answer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     content = models.TextField(max_length=1000)
-    likes = models.ManyToManyField(User, related_name='a_likes', blank=True)
     is_adopted = models.BooleanField(default=False)
     reply_ids = models.JSONField(default=list, blank=True)
+    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='liked_answers', blank=True)
 
+    def like_count(self):
+        """현재 좋아요 개수 반환"""
+        return self.likes.count()
     def update_reply_info(self):
         """대댓글 정보를 업데이트하는 메서드"""
         self.reply_ids = list(self.replies.values_list('id', flat=True))
