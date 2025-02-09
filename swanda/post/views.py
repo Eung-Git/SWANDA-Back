@@ -3,10 +3,11 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import *
 from .serializers import *
-
-
+from .models import *
+from rest_framework.permissions import IsAuthenticated  # 로그인한 사용자만 가능
+from rest_framework import status
+from .models import Answer
 
 # Create your views here.
 class QuestionView(APIView):
@@ -35,30 +36,84 @@ class QuestionView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class AdoptView(APIView):
-    def apdopt(self, request, question=None, answer=None):
+    def put(self, request):
         try:
-            question = Question.objects.get(id = question)
-            
-            question.adopt = 1
+            question_id = request.data.get('question_id')
+            answer_sequence_id = request.data.get('answer_sequence_id')
+
+            if not question_id or not answer_sequence_id:
+                return Response({'error': 'Question ID and Answer Sequence ID are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # question_id를 정수로 변환
+            try:
+                question_id = int(question_id)
+                answer_sequence_id = int(answer_sequence_id)
+            except ValueError:
+                return Response({'error': 'Invalid ID format'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # 질문 가져오기
+            try:
+                question = Question.objects.get(id=question_id)
+            except Question.DoesNotExist:
+                return Response({'error': f'Question with ID {question_id} not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            # 답변 가져오기
+            try:
+                answer = Answer.objects.get(question=question, sequence_id=answer_sequence_id)
+            except Answer.DoesNotExist:
+                return Response({'error': f'Answer with Sequence ID {answer_sequence_id} for Question {question_id} not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            # 기존 채택된 답변이 있는지 확인 후 초기화
+            previous_accepted_answer = Answer.objects.filter(question=question, is_adopted=True).first()
+            if previous_accepted_answer:
+                previous_accepted_answer.is_adopted = False
+                previous_accepted_answer.save()
+
+            # 새 답변 채택
+            answer.is_adopted = True
+            answer.save()
+
+            # 질문 업데이트 (채택된 답변이 있는지 표시)
+            question.has_accepted_answer = True
             question.save()
-            
-            # 해당 댓글을 채택한 댓글로 지정
-            
-        except Question.DoesNotExist:
-            return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            return Response({
+                'message': 'Answer accepted successfully',
+                'question_id': question.id,
+                'accepted_answer_id': answer.sequence_id
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 class AnswerView(APIView):
     def post(self, request):
         try:
-            data = json.loads(request.body)
-            content = data.get('content')
-            question_id = data.get('question')
+            # `json.loads(request.body)` 제거 (DRF에서는 request.data 사용)
+            question_id = request.data.get('question_id')
+            content = request.data.get('content')
+
+            if not question_id:
+                return Response({'error': 'Question ID is required'}, status=status.HTTP_400_BAD_REQUEST)
 
             if not content:
                 return Response({'error': 'Content is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-            question = Question.objects.get(id=question_id)
+            # question_id를 정수로 변환 (문자열로 들어오는 경우 대비)
+            try:
+                question_id = int(question_id)
+            except ValueError:
+                return Response({'error': 'Invalid question ID format'}, status=status.HTTP_400_BAD_REQUEST)
 
+            # 질문이 존재하는지 확인
+            try:
+                question = Question.objects.get(id=question_id)
+            except Question.DoesNotExist:
+                return Response({'error': f'Question with ID {question_id} not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            # 답변 생성
             new_answer = Answer.objects.create(
                 question=question,
                 content=content
@@ -68,50 +123,66 @@ class AnswerView(APIView):
                 'message': 'Answer created successfully',
                 'question': question.title,
                 'content': new_answer.content,
-                # 'likes': new_answer.likes,
                 'is_adopted': new_answer.is_adopted
             }, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 class ReplyView(APIView):
-
     def post(self, request):
         try:
-            data = json.loads(request.body)
-            content = data.get('content')
-            answer_id = data.get('answer')
+            question_id = request.data.get('question_id')
+            answer_sequence_id = request.data.get('answer_sequence_id')
+            content = request.data.get('content')
 
-            if not content:
-                return Response({'error': 'Content is required'}, status=status.HTTP_400_BAD_REQUEST)
-            if not answer_id:
-                return Response({'error': 'Answer ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+            if not question_id or not answer_sequence_id or not content:
+                return Response({'error': 'Question ID, Answer Sequence ID, and Content are required'}, status=status.HTTP_400_BAD_REQUEST)
 
+            # ID 값을 정수로 변환
             try:
-                answer = Answer.objects.get(id=answer_id)
-            except Answer.DoesNotExist:
-                return Response({'error': 'Parent answer not found'}, status=status.HTTP_404_NOT_FOUND)
+                question_id = int(question_id)
+                answer_sequence_id = int(answer_sequence_id)
+            except ValueError:
+                return Response({'error': 'Invalid ID format'}, status=status.HTTP_400_BAD_REQUEST)
 
-            reply = Reply.objects.create(
+            # 질문 가져오기
+            try:
+                question = Question.objects.get(id=question_id)
+            except Question.DoesNotExist:
+                return Response({'error': f'Question with ID {question_id} not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            # 답변 가져오기 (`answer_id` 대신 `answer_sequence_id` 사용)
+            try:
+                answer = Answer.objects.get(question=question, sequence_id=answer_sequence_id)
+            except Answer.DoesNotExist:
+                return Response({'error': f'Answer with Sequence ID {answer_sequence_id} for Question {question_id} not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            # 마지막 대댓글의 sequence_id 찾기
+            last_reply = Reply.objects.filter(answer=answer).order_by('reply_sequence_id').last()
+            reply_sequence_id = (last_reply.reply_sequence_id + 1) if last_reply else 1
+
+            # 대댓글 생성
+            new_reply = Reply.objects.create(
                 answer=answer,
+                reply_sequence_id=reply_sequence_id,
                 content=content
             )
+
             return Response({
                 'message': 'Reply created successfully',
                 'reply': {
-                    'id': reply.id,
-                    'answer_id': reply.answer.id,
-                    'content': reply.content,
-                    #'likes': reply.likes,
-                    'created_at': reply.created_at,
+                    'id': new_reply.id,
+                    'question_id': question.id,
+                    'answer_sequence_id': answer.sequence_id,
+                    'reply_sequence_id': new_reply.reply_sequence_id,
+                    'content': new_reply.content,
+                    'created_at': new_reply.created_at
                 }
             }, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 class QuestionViewSet(APIView):
     def get(self, request):
         questions = Question.objects.all()
@@ -219,3 +290,27 @@ class ReplyDetailView(APIView):
         except Reply.DoesNotExist:
             return Response({'error': 'Reply not found'}, status=status.HTTP_404_NOT_FOUND)
 
+
+class AnswerLikeView(APIView):
+    permission_classes = [IsAuthenticated]  # 로그인한 사용자만 접근 가능
+
+    def post(self, request, question_id, answer_sequence_id):
+        try:
+            # 답변 찾기
+            answer = Answer.objects.get(question__id=question_id, sequence_id=answer_sequence_id)
+
+            # 좋아요 토글
+            liked = answer.toggle_like(request.user)
+
+            return Response({
+                'message': 'Like toggled successfully',
+                'answer_id': answer.id,
+                'liked': liked,  # True면 좋아요 추가됨, False면 좋아요 취소됨
+                'like_count': answer.like_count(),
+            }, status=status.HTTP_200_OK)
+
+        except Answer.DoesNotExist:
+            return Response({'error': 'Answer not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

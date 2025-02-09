@@ -1,5 +1,8 @@
 from django.db import models
 from datetime import *
+from django.conf import settings  # User 모델 참조
+User = settings.AUTH_USER_MODEL
+
 
 # Create your models here.
 class Post(models.Model):
@@ -33,10 +36,21 @@ class Answer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     content = models.TextField(max_length=1000)
-    # likes = models.ManyToManyField() // 추후 유저 추가한 뒤
     is_adopted = models.BooleanField(default=False)
     reply_ids = models.JSONField(default=list, blank=True)
+    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='liked_answers', blank=True)
+    def toggle_like(self, user):
+        """좋아요를 토글하는 메서드 (추가/취소)"""
+        if user in self.likes.all():
+            self.likes.remove(user)
+            return False  # 좋아요 취소됨
+        else:
+            self.likes.add(user)
+            return True  # 좋아요 추가됨
 
+    def like_count(self):
+        """현재 좋아요 개수 반환"""
+        return self.likes.count()
     def update_reply_info(self):
         """대댓글 정보를 업데이트하는 메서드"""
         self.reply_ids = list(self.replies.values_list('id', flat=True))
